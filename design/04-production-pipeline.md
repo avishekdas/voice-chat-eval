@@ -44,9 +44,11 @@ an already-fragile, business-critical path. Instead:
    [01](01-observability.md) hasn't landed yet — partial coverage is fine
    at this stage, per the thin-slice principle).
 4. **Write:** attach each `EvalScore` to the `call_id`-keyed Langfuse
-   trace as a score. Tag every score with `is_eval_tenant` (read from the
-   tenant_id prefix, [[Finding 9]]) — this is the only thing that makes the
-   [05](05-dashboards.md) exclusion filter possible downstream.
+   trace as a score. Tag every score with `is_eval_tenant`, computed via
+   `design.md`'s single derivation rule (`tenant_id.startswith("eval-")`,
+   [[Finding 9]]) rather than re-implemented here — this is the only thing
+   that makes the [05](05-dashboards.md) exclusion filter possible
+   downstream.
 
 ## 3. Audio-scoring sampling
 

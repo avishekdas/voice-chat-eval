@@ -28,7 +28,7 @@ design can be trusted.
 | [design/02-voice-evaluation-layer.md](design/02-voice-evaluation-layer.md) | Shared `voiceeval` scoring library | Eval framework team | None — can start immediately on existing data |
 | [design/03-preprod-regression.md](design/03-preprod-regression.md) | Promptfoo + call-driver harness | Eval framework team | Backend ticket: eval tenant + Square Sandbox creds ([[Finding 9]]) — **not yet confirmed filed** |
 | [design/04-production-pipeline.md](design/04-production-pipeline.md) | `call.ended` scoring job | Eval framework team | design/02's library; design/01's trace id convention |
-| [design/05-dashboards.md](design/05-dashboards.md) | Engineering + management views | Eval framework team | design/01 (Langfuse) and design/04 (scores existing to display) |
+| [design/05-dashboards.md](design/05-dashboards.md) | Engineering + management views | Eval framework team | design/01 (Langfuse) and design/04 (scores existing to display); **management-scorecard Approach B specifically also needs a new export Lambda and the existing Prometheus/Grafana stack** — see design/05's Open Spike before assuming Approach A (native Langfuse) avoids this |
 
 ## Cross-cutting conventions
 
@@ -50,6 +50,14 @@ interface independently.
   engineering/debugging purposes (Langfuse traces, Promptfoo run results)
   do **not** filter it — eval-tenant calls still need visible scores, just
   not blended into production KPIs.
+- **Single derivation rule for `is_eval_tenant`:** `is_eval_tenant =
+  tenant_id.startswith("eval-")`. This is the one and only place this
+  check is defined. Every component that tags or filters on
+  `is_eval_tenant` — [01](design/01-observability.md)'s trace/span tagging,
+  [04](design/04-production-pipeline.md)'s score writing,
+  [05](design/05-dashboards.md)'s aggregation filter — derives the boolean
+  this same way; none of them re-implement or restate the prefix check
+  independently.
 - **Deterministic Langfuse trace id: `trace_id = call_id`.** Verified this
   session: Langfuse upserts a trace idempotently when the same custom
   trace id is sent again within its retention window — and Langfuse Cloud

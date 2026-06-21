@@ -54,21 +54,30 @@ to support native dashboards.
 
 ### KPI list
 
-Reuses `idea.md` §5's scorecard unchanged — restated here as the literal
-contract this dashboard must render, all filtered to exclude
-`is_eval_tenant = true` records per [04](04-production-pipeline.md)'s
-tagging:
+Restated here as the literal contract this dashboard must render, all
+filtered to exclude `is_eval_tenant = true` records per
+[04](04-production-pipeline.md)'s tagging. This is `idea.md` §5's
+scorecard with one deliberate removal: **"WER / speech understanding
+score" is dropped** — `idea.md`'s Finding 7 explicitly rejected building
+any WER mechanism, and `design/02`'s `voiceeval` library defines no
+function that computes it, so it had no designed producer and would have
+rendered as permanently empty. No replacement metric is being substituted
+for it at this time.
 
 1. Order completion success %
 2. Add/Edit/Delete accuracy %
 3. Correct tool call %
 4. Correct tool payload %
-5. Interruption recovery %
-6. WER / speech understanding score
-7. Average + P95 response latency
-8. Voice quality / naturalness score (NISQA/DNSMOS/UTMOS, post-calibration per [[Finding 7]])
-9. Escalation correctness %
-10. Prompt version delta vs previous baseline
+5. Interruption recovery % (sourced from [02](02-voice-evaluation-layer.md)'s
+   `score_interruptions()`, which itself depends on
+   [01](01-observability.md)'s Data Connection listener — **this KPI has no
+   data, or only partial-coverage data, until 01's join-permission Open
+   Spike is resolved and the listener is live**; this dashboard renders
+   whatever 04 has written, it does not backfill the gap)
+6. Average + P95 response latency
+7. Voice quality / naturalness score (NISQA/DNSMOS/UTMOS, post-calibration per [[Finding 7]])
+8. Escalation correctness %
+9. Prompt version delta vs previous baseline
 
 ### Release-readiness view
 

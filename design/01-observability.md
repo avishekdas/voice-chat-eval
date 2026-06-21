@@ -16,6 +16,8 @@ or how/when scores get triggered in production (→
   and a boolean `is_eval_tenant` tag from day one, regardless of project
   structure — this is what makes a future migration to per-tenant projects
   (if ever needed) a query/export operation instead of re-instrumentation.
+  `is_eval_tenant` is computed via `design.md`'s single derivation rule
+  (`tenant_id.startswith("eval-")`), not re-derived independently here.
 
 ## 2. Data Connection listener
 
