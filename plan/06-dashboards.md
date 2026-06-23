@@ -13,6 +13,11 @@ by Phase 4 and Phase 3 — **computes nothing itself** (design/05 intro):
 - **Release-readiness view** — Promptfoo's own run output, consumed from CI
   (design/05 §release-readiness; already covered by Phase 3).
 
+**Note (fixed by the plan review):** `design/05-dashboards.md`'s Approach-A
+row previously said "10-KPI scorecard," a stale reference predating the
+WER-KPI removal documented later in the same file. It has been corrected to
+"9-KPI" to match the actual KPI list and this plan's count.
+
 ## Dependencies
 
 - **Engineering view: Phase 1b** — "nearly free once Phase 1b exists (native
@@ -72,6 +77,14 @@ by Phase 4 and Phase 3 — **computes nothing itself** (design/05 intro):
 - **Track R — release-readiness (verification only):**
   - No new code; confirm Phase 3's `promptfoo eval` output is visible as a CI
     artifact (design/05 §release-readiness).
+
+- **e2e (manual, this milestone's required e2e test per plan.md's
+  cross-cutting conventions):** place one real call, let Phase 4 score it,
+  and confirm the score appears correctly in both the engineering trace view
+  and the management scorecard within a reasonable time window — the chain
+  "real call → score → dashboard" is the literal e2e definition from
+  plan.md, named explicitly here rather than left implicit in the Demo
+  criteria below.
 
 ## Demo criteria
 

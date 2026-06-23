@@ -21,7 +21,7 @@ before building, not a gap to guess across.
 | [plan/00-thin-slice.md](plan/00-thin-slice.md) | Thin end-to-end slice | 0 | design.md §build-sequencing | Eval team |
 | [plan/01a-voice-eval-layer.md](plan/01a-voice-eval-layer.md) | `voiceeval` library core (order diff + LLM judge) | 1a | design/02 §1-2 | Eval team |
 | [plan/01b-observability.md](plan/01b-observability.md) | Data Connection listener + deeper Langfuse tracing | 1b | design/01 | Eval team |
-| [plan/02-backend-tickets.md](plan/02-backend-tickets.md) | Backend tickets (webhook dedup, eval tenant + Square Sandbox) | 2 | idea.md F4/F9, design/01 spike A | Backend team |
+| [plan/02-backend-tickets.md](plan/02-backend-tickets.md) | Backend tickets (webhook dedup, eval tenant + Square Sandbox, joinUrl push) | 2 | idea.md F4/F9, design/01 spike A | Backend team |
 | [plan/03-preprod-regression.md](plan/03-preprod-regression.md) | Promptfoo packs + call-driver harness + CI gate | 3 | design/03 | Eval team |
 | [plan/04-production-pipeline.md](plan/04-production-pipeline.md) | `call.ended` continuous scoring Lambda | 4 | design/04 | Eval team |
 | [plan/05-audio-quality.md](plan/05-audio-quality.md) | NISQA/DNSMOS/UTMOS audio scoring + calibration | 5 | design/02 §4 | Eval team |
@@ -37,10 +37,10 @@ Phase 0 (thin slice) ───── must complete first; nothing else starts un
    Phase 1a        Phase 1b                                    Phase 2 (backend)
  (voiceeval core)  (listener +                          (a) webhook dedup fix
         │           deeper tracing)                     (b) eval tenant + Square Sandbox
-        │           BLOCKED on design/01                    + design/01 spike-A push
-        │           join-permission spike                       │
-        │              │                                        │
-        │              │                                        │
+        │           BLOCKED on design/01                    (c) joinUrl push + tool
+        │           join-permission spike                       call_id context
+        │              │                                        │  (resolves design/01's
+        │              │                                        │   join-permission spike)
         ├──────────────┴────────────────┐                       │
         ▼                                ▼                       │
    Phase 4                          Phase 6 (eng view)           │
@@ -54,11 +54,16 @@ Phase 0 (thin slice) ───── must complete first; nothing else starts un
    needs Phase 4 producing      needs Phase 1a (library)
    scores at real volume        AND Phase 2b (eval tenant)
                                 BLOCKED on design/03 audio-frame spike
-                                                │
-                                                ▼
-Phase 5 (audio quality) ── parallel with 2-4 once the 20-50 call
-                            human-rated calibration sample EXISTS
-                            (gated on sample, not a date)
+
+Phase 5 (audio quality) ── NO incoming arrow from 0-4 above; gated only on the
+                            20-50 call human-rated calibration sample EXISTING.
+                            (Note: Track M (models) is fully independent; Track
+                            S (sample collection) draws calls from Phase 4's
+                            pipeline at 100% sampling during the calibration
+                            window — see plan/05's Dependencies section. So
+                            "parallel with 2-4" is accurate for the milestone
+                            as a whole, but Track S specifically waits on
+                            Phase 4 being live.)
 ```
 
 **What can run truly in parallel (different engineers/agents, same time):**
@@ -66,9 +71,9 @@ Phase 5 (audio quality) ── parallel with 2-4 once the 20-50 call
 - **1a, 1b, and 2** all start the moment Phase 0 is proven. 1a (the library)
   does **not** depend on 1b (the listener) — per `CLAUDE.md`'s table and
   Finding 2's loosened dependency graph.
-- Within **Phase 2**, the two backend tickets (2a webhook dedup, 2b eval
-  tenant) are independent of each other and of everything the eval team
-  builds — file both immediately.
+- Within **Phase 2**, the three backend tickets (2a webhook dedup, 2b eval
+  tenant, 2c joinUrl-push + tool `call_id` context) are independent of each
+  other and of everything the eval team builds — file all three immediately.
 - **Phase 5** (audio quality) is gated only on its calibration sample
   existing, not on phases 2-4 — it can run alongside them once the sample is
   collected.

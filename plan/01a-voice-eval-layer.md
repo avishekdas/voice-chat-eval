@@ -121,6 +121,14 @@ Both tracks converge only on the shared `EvalScore` return type.
     handful of hand-checked real transcripts and confirm agreement; pick the
     cheapest model that passes. Capture the hand-check results as an artifact.
 
+- **e2e (manual, this milestone's required e2e test per plan.md's
+  cross-cutting conventions):** run `score_order_accuracy()` and
+  `judge_rubric("escalation_handling")` against one real completed call's real
+  `transaction_details` + transcript, end to end, and sanity-check both
+  results against human reading of that call — this is the check described in
+  North-star validation below, named explicitly here so it isn't silently
+  uncounted as the milestone's e2e coverage.
+
 ## Demo criteria
 
 - `pytest` green on the `voiceeval/order/` and `voiceeval/judge/` test suites
@@ -129,6 +137,11 @@ Both tracks converge only on the shared `EvalScore` return type.
   real (or realistic) order pair and print the `OrderAccuracyScore`; call
   `judge_rubric()` with `escalation_handling` on a real transcript and print
   the `RubricScore` (score + rationale).
+- A second runnable snippet showing `score_order_accuracy()` on a deliberately
+  mismatched order pair (missing item, extra item, or quantity mismatch),
+  printing nonzero `missing_items`/`extra_items` and `total_matches = False`
+  — proving the diff actually catches errors, not just confirms correct
+  orders.
 - Confirm **no `import promptfoo` and no `import langfuse`** anywhere inside the
   `voiceeval` package (a grep/test enforcing design/02 §5 / Finding 10's purity
   rule).

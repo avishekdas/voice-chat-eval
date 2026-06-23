@@ -73,6 +73,13 @@ Findings 7, 11):
     historical audio scores aren't silently re-interpreted when the mapping
     changes.
 
+- **e2e (manual, this milestone's required e2e test per plan.md's
+  cross-cutting conventions):** run the full `score_audio_quality()` pipeline
+  against one real recording fetched on-demand from Ultravox for a real
+  `call_id` (not just a golden-fixture WAV), and confirm the result falls
+  within the calibrated mapping's expected band before treating Phase 5 as
+  done — golden fixtures alone don't prove the on-demand fetch path works.
+
 ## Demo criteria
 
 - `score_audio_quality(<golden_fixture.wav>)` returns a populated

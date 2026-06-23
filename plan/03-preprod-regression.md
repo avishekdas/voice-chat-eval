@@ -37,7 +37,12 @@ audio-send step is the one piece gated on a spike.
   (`scenarios/eval-iscream-gelato/*.yaml`) and the thin `assertions/*.py` shims
   that load a scenario and call `voiceeval` (design/03 §1). Independent of the
   harness internals — the shims just need `voiceeval` (Phase 1a). Can start as
-  soon as 1a lands.
+  soon as 1a lands. **One coordination point with Track H1/H2:** Track P also
+  authors the `providers:` entry in `promptfooconfig.yaml`, which must match
+  whatever provider-plugin shape the harness exposes (design/03 §scenario
+  sketch). Agree on that interface (e.g. a CLI invocation contract or a Python
+  provider class signature) before either track writes its half — the
+  *implementations* are independent, but this one config field is shared.
 - **Track H1 — harness call placement + capture (non-audio-send parts).** Call
   `POST /calls/web` for the `eval-` tenant, receive `joinUrl`, connect as
   WebSocket client, capture agent audio + transcript deltas + `state` messages

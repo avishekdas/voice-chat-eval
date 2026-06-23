@@ -84,8 +84,12 @@ engine behind the north star — the "are we getting better over time" trend
     unit-testable**. Alternative verification: an integration test invoking the
     Lambda with a synthetic `call.ended` event and asserting scores land on the
     Langfuse trace; plus a manual e2e smoke run on one real `call.ended`.
-  - Also assert (integration) the Lambda has **no** write path to production
-    order tables (design/04 §1 — purely additive, read-only).
+  - Also verify the Lambda has **no** write path to production order tables
+    (design/04 §1 — purely additive, read-only) via an **IAM policy / static
+    check** (e.g. asserting the Lambda's execution role grants no
+    `dynamodb:PutItem`/`UpdateItem` on the order tables) — this is a CI-time
+    policy-document assertion, not a runtime integration test; don't write a
+    test that mutates DynamoDB just to prove the role can't.
 
 - **`score_interruptions()` graceful skip (unit-testable):**
   - RED: failing test that when no listener state events exist for a call, the

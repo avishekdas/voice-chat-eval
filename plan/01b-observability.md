@@ -42,12 +42,25 @@ run in parallel once it does — and one piece (the schema) can be written
     connection** to develop and test — build and unit-test them against
     hand-built event streams while the spike is being run.
 
+- **Pre-spike, can start now (independent of join-permission spike, like
+  Track S):**
+  - **Track L1 — buffer data structure.** The buffer's own correctness
+    (ordering, overflow behavior, dedup-by-construction) is a pure data
+    structure over a stream of `state`/transcript/ping-pong events
+    (design/01's documented Data Connection event schema) and is
+    unit-testable against an **injected fake event source** (e.g. a fake
+    async iterator yielding canned messages). The event *shape* is fixed by
+    Ultravox's Data Connection protocol, not by which join mechanism (Approach
+    A vs B) is used to obtain the `joinUrl` — so this track does not need the
+    spike resolved first.
+
 - **Blocked on the join-permission spike (design/01 §2 Open Spike → spike
   Approach A first):**
-  - **Track L — listener connection + buffering.** Only after the spike
-    confirms how the listener obtains a `joinUrl` (Approach A: backend push, the
-    recommended first spike) and that an observer WebSocket can join without
-    disrupting the customer's session.
+  - **Track L2 — actual WebSocket join + reconnect.** Only after the spike
+    confirms how the listener obtains a `joinUrl` (Approach A: backend push,
+    the recommended first spike) and that an observer WebSocket can join
+    without disrupting the customer's session. This part is genuinely
+    integration/e2e only — it cannot be meaningfully unit-tested.
 
 - **Parallel, backend-coordinated (Phase 2 overlap):**
   - **Track T — tool-call span emission.** Each Lambda tool emits its own span
@@ -80,14 +93,24 @@ run in parallel once it does — and one piece (the schema) can be written
   - VERIFY: covered, including a duplicate-event-stream test proving re-running
     the flush regenerates identical span ids (idempotent upsert).
 
-- **Track L — listener connection + buffering (mostly NOT unit-testable):**
-  - The WebSocket join + live buffering is integration/e2e against Ultravox —
-    **not unit-testable**. Alternative verification: an integration test
-    against a recorded Data Connection event stream replayed into the buffer,
-    plus a manual e2e smoke run joining one real call and confirming buffered
-    `state`/transcript/ping-pong events. The flush-to-Langfuse step is verified
-    by the Track S unit tests on the pure derivation, plus an integration test
-    confirming spans land on the `call_id` trace.
+- **Track L1 — buffer data structure (unit-testable via dependency
+  injection):**
+  - RED: failing test that injects a fake event source yielding a canned
+    `state`/transcript/ping-pong sequence (including out-of-order or duplicate
+    events) and asserts the buffer's ordering/dedup/overflow behavior.
+  - GREEN: minimal buffer implementation against the injected source.
+  - REFACTOR: keep the buffer's logic separate from the real transport.
+  - VERIFY: buffer-logic branches covered without any real WebSocket.
+
+- **Track L2 — actual WebSocket join + reconnect (NOT unit-testable):**
+  - The WebSocket join + live connection handling is integration/e2e against
+    Ultravox — **not unit-testable**. Alternative verification: an integration
+    test against a recorded Data Connection event stream replayed through the
+    real transport into Track L1's buffer, plus a manual e2e smoke run joining
+    one real call and confirming buffered events flow through correctly. The
+    flush-to-Langfuse step is verified by the Track S unit tests on the pure
+    derivation, plus an integration test confirming spans land on the
+    `call_id` trace.
   - Robustness (reconnect, buffer overflow, multi-call concurrency) is
     explicitly deferred until the thin slice / first real join proves the basic
     path (design/01 §3) — do not build it speculatively.
@@ -133,10 +156,11 @@ non-client service joins another session's Data Connection mid-call to observe.*
 Resolve via **spike Approach A first** (small backend change to push the
 `joinUrl` to the listener at call creation — design/01's decision), confirming
 both that the push works and that an observer WebSocket can join without
-disrupting the customer's session. **Do not write any listener code (Track L)
-until this spike confirms A works or rules it out in favor of B.** Track S (the
-pure schema/id logic) is the only part that may proceed before the spike
-closes.
+disrupting the customer's session. **Do not write Track L2's WebSocket
+join/reconnect code until this spike confirms A works or rules it out in
+favor of B.** Track S (the pure schema/id logic) and Track L1 (the buffer
+data structure, built against an injected fake event source) are the only
+parts that may proceed before the spike closes.
 
 Secondary precondition (not a spike, a verification): confirm whether `call_id`
 is already present in each tool Lambda's invocation context before assuming

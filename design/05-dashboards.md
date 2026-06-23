@@ -25,7 +25,7 @@ features before committing to either path below.
 
 | Approach | Mechanism | Verdict |
 |---|---|---|
-| **A. Native Langfuse dashboards** | If Hobby tier supports custom dashboard/scorecard views, build the [[Finding 6]] 10-KPI scorecard directly there. | Simplest if available — zero new infra. Blocked on the spike above. |
+| **A. Native Langfuse dashboards** | If Hobby tier supports custom dashboard/scorecard views, build the [[Finding 6]] 9-KPI scorecard directly there. | Simplest if available — zero new infra. Blocked on the spike above. |
 | **B. Export scores into the existing Prometheus/Grafana stack (recommended fallback)** | A small Lambda periodically pulls scores via Langfuse's public API and exposes them as Prometheus metrics (or pushes to a pushgateway), feeding the **already-existing** EC2-based Prometheus+Grafana stack confirmed in `monitoring/` (`prometheus-grafana-working.yaml`, `prometheus.yml` with a CloudWatch exporter job). | Reuses verified, already-operated infra rather than building a new BI surface — consistent with the project's "adopt, don't build" pattern ([[Finding 7]]). |
 
 **Recommendation: spike A first (it's free to check); fall back to B if
