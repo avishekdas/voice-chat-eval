@@ -1016,6 +1016,108 @@ deliverable — the Ultravox call-driver harness — to the roadmap from
 1) since they share the same integration point, and feeding the Promptfoo
 scenario layer that already depended on it implicitly.
 
+### Addendum to Finding 11 (2026-06-23): expanded vendor/benchmark survey
+
+A follow-up request asked for two more vendors (Maxim AI, ServiceNow EVA)
+plus five additional names surfaced from memory of early research
+(VoiceBench, VoiceAgentBench, ESPnet-SDS, Braintrust.dev, DeepEval). Each
+was independently verified via web search rather than recalled — one
+materially changed category mid-research (EVA), so it's worth reading
+the table below rather than assuming the name implies "vendor."
+
+**Commercial SaaS comparison (same category as Hamming/Coval/Cekura/
+Bespoken above):**
+
+| | Hamming AI | Coval | Cekura | Maxim AI |
+|---|---|---|---|---|
+| Category | Closed SaaS, voice-QA + prod monitoring | Closed SaaS (YC), agent sim/eval | Closed SaaS (YC), voice/chat QA | Closed SaaS, general GenAI eval+observability |
+| Self-hosting | No | No | No | No (on-prem only on Enterprise tier) |
+| Voice-native simulation | Yes — 50K+ concurrent sim calls, accents/noise/interruptions, auto-converts prod failures into scenarios | Yes — persona-based sim, load/permutation testing | Yes — persona sim, prod-conversation monitoring | Yes — accent/noise/interruption/emotion simulation, no-code UI |
+| Order-accuracy / structured-backend diffing | Not advertised | General tool-call/param validation (POS/EHR/API), not order-specific diffing | Not advertised | Not advertised |
+| Menu-grounded rubric judging | No | No | No | No (generic eval rubrics) |
+| Ultravox compatibility verified | No (LiveKit/Pipecat/ElevenLabs/Retell/Vapi confirmed; Ultravox not mentioned) | No | No (Retell/VAPI/ElevenLabs/LiveKit/Pipecat/Bland confirmed; Ultravox not mentioned) | No |
+| Pricing | Enterprise/custom (SOC 2) | Custom | Free tier (300 credits) → from $30/mo | Free (10K logs) → $29-49/seat/mo → Enterprise custom |
+
+**Decision: no change.** Same reasoning as the original Finding 11 verdict
+— closed-source, no self-hosting, and Ultravox compatibility unverified
+on all four; none compute deterministic order-accuracy diffing or
+menu-grounded rubrics, which remain this project's hardest, most
+product-specific pieces regardless of which vendor sits underneath.
+
+**ServiceNow EVA — reclassified, not a vendor.** Initially assumed to be
+a commercial ServiceNow product; verified to actually be an **open-source
+research benchmark framework** (GitHub `ServiceNow/eva` + HuggingFace
+datasets, co-developed with NVIDIA for NOWAI-Bench). It scores bot-to-bot
+WebSocket audio conversations (two AIs talking to each other, not a real
+caller against a live agent) across generic enterprise domains (Airline
+CSM, IT Service Management, HR Service Delivery) — not retail ordering —
+producing two aggregate scores (EVA-A accuracy, EVA-X experience). It has
+no integration point for a specific production agent like ours; adopting
+it would still require building our own bot-to-bot driver (the same
+call-driver harness work Finding 11 already committed to) just to feed it
+data, and its domains/metrics don't cover order-accuracy or menu
+grounding. **Rejected as inapplicable** — it's a model-benchmarking
+artifact, not a tool that plugs into a live Ultravox deployment.
+
+**Academic benchmarks (VoiceBench, VoiceAgentBench, ESPnet-SDS) — same
+"not a tool" classification as EVA:**
+
+- **VoiceBench** (arXiv 2410.17196, TACL'26, OSS on GitHub) — a static
+  dataset of 6,783 spoken instructions scoring general knowledge,
+  instruction-following, and safety for LLM-based voice assistants. No
+  agentic/tool-call evaluation, no order-domain coverage, no live-agent
+  integration — it's a leaderboard dataset, not a testing harness.
+- **VoiceAgentBench** (arXiv 2510.07978) — closer in spirit to our needs
+  (it benchmarks tool-call correctness: single/parallel/dependent calls,
+  dialogue-based invocation, safety), but still a static, English +
+  6-Indic-language synthetic dataset for comparing base voice-LLMs against
+  each other, not a harness for testing one specific deployed agent. No
+  order-accuracy or menu-grounding concept. Worth noting as **methodology
+  validation** — its tool-call-correctness categories corroborate that
+  "right tool, right payload" is an industry-recognized axis, which is
+  exactly what `design/02`'s Outcome Evaluator already scores — but it is
+  not adoptable as-is.
+- **ESPnet-SDS** (NAACL'25 demo, OSS toolkit) — research infrastructure
+  for assembling and comparing your *own* cascaded/end-to-end spoken
+  dialogue pipelines (swappable ASR/LLM/TTS components) against a
+  human-human conversation baseline, with a Gradio demo UI. It assumes you
+  bring the SDS components being evaluated; it has no concept of
+  evaluating an externally-hosted, already-built production agent like
+  ours. Not adoptable for this project's shape.
+
+**Decision: none of the three academic artifacts change the architecture.**
+They're useful as external validation that this project's metric
+categories (tool-call correctness, instruction-following, audio quality)
+are the industry-recognized axes — not as tools to adopt — because all
+three evaluate models/pipelines in the abstract, not a specific deployed
+production agent reachable only through its real integration surface
+(Ultravox + Square + our Lambdas).
+
+**Braintrust.dev and DeepEval — both already named in the original Finding
+11 pass, now confirmed with current facts, no change to either verdict:**
+
+- **Braintrust** — closed SaaS, free tier ($0, 1GB/10K scores), Pro
+  $249/mo, self-hosting restricted to Enterprise (hybrid control-plane/
+  data-plane split, customer runs the data plane in their own cloud via
+  Terraform). Still a general text-first LLM eval/observability platform
+  with **no voice-native simulation or audio-quality scoring** found —
+  confirms the original Finding 11 verdict ("no voice-specific advantage
+  found that clears the 'huge difference' bar").
+- **DeepEval** (`deepeval.com` / `confident-ai/deepeval` — corrected from
+  the `deepval.com` typo) — confirmed 100% free, MIT-licensed, pytest-
+  native, and **explicitly has no voice evaluation support** ("Python-
+  only, text-based"). This sharpens the original Finding 11 mention (which
+  only called it "a viable comparable alternative" to Promptfoo, not
+  voice-aware) — DeepEval is not a candidate for the Voice Evaluation
+  Layer or audio scoring under any circumstance, only ever a possible
+  pre-prod-gating hedge if Promptfoo's roadmap shifts.
+
+**Net effect on the build plan: none.** This addendum adds no new
+deliverable (unlike the first Finding 11 pass, which added the call-driver
+harness) — every newly-surveyed option is either the same category as
+already-rejected SaaS competitors, or a research artifact with no
+production-agent integration surface at all.
+
 ---
 
 ## 1. Overview
